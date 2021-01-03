@@ -85,6 +85,10 @@ def input():
     download_quality = None
     argv = sys.argv[1:]
 
+    if len(argv) == 0:
+        usage()
+        sys.exit(2)
+
     try:
         re.search('youtu\\.be|youtube', argv[0]).start()
         url_input = argv[0]
@@ -108,10 +112,6 @@ def input():
             sys.exit(0)
         if opt == '-q':
             download_quality = arg
-
-    if len(argv) == 0:
-        usage()
-        sys.exit(2)
 
     main(url_input, av_format, download_quality)
 
