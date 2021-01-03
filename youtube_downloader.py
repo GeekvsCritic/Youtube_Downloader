@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import progressbar
 import numpy as np
 import urllib
@@ -5,16 +7,28 @@ import re
 import pytube
 import os
 import sys
-os.system(f"{sys.executable} -m pip install -U progressbar")
-os.system(f"{sys.executable} -m pip install -U pytube")
+# os.system(f"{sys.executable} -m pip install -U progressbar")
+# os.system(f"{sys.executable} -m pip install -U pytube")
 
-version = 1.0
+version = 1.3
 name = 'youtube_downloader.py'
+
+pbar = None
+
+
+def usage():
+    sys.stderr.write(f"""
+This is {name} version {version}, a tool to download video/audio from youtube of selected quality.\n\n
+Usage: {name} -y url [-v resolution] [-a quality] [-h]\n\n
+-h: Display help\n
+-v: Provide the resolution you want to download ['2160p', '1440p', '1080p', '720p', '480p', '360p', '240p', '144p']\n
+-a: Provide the quality you want to download ['256kbps', '128kbps', '160kbps', '70kbps', '50kbps']\n
+    """)
 
 
 def show_progress(block_num, block_size, total_size):
     # https://stackoverflow.com/a/46825841/5734121
-    pbar = None
+    global pbar
     if pbar is None:
         pbar = progressbar.ProgressBar(maxval=total_size)
 
@@ -28,17 +42,17 @@ def show_progress(block_num, block_size, total_size):
 
 
 def download_file(required_file, title, av_format, available_quality):
-    url = required_file.url
-    file_extension = 'mp3' if av_format == 'audio' else required_file.mime_type.split("/")[1]
-    file_name = title.replace(" ", "_")+"_" + available_quality+"."+file_extension
-    final_file_name = re.sub('[^A-Za-z0-9 _\-.]+', '', file_name)
-    print(final_file_name)
+    file_name = title + "_" + available_quality  # +"."+file_extension
     print("File Size: "+str(round(required_file.filesize/1024/1024, 2))+" MB")
-    urllib.request.urlretrieve(url, final_file_name, show_progress)
+    file = required_file.download(filename=file_name)
+    file_without_ext, file_ext = os.path.splitext(file)
+    os.rename(file.replace("\\", r"\\"), file_without_ext +
+              ".mp3" if av_format == 'audio' and file_ext == '.mp4' else file_without_ext+file_ext)
 
 
 def download_type(video, title, av_format, resolution_to_download):
-    download_type = video.streams.filter(type=av_format, subtype='mp4')
+    download_type = video.streams.filter(
+        type=av_format)  # , subtype='mp4'
     list_of_quality = np.unique(
         [i.resolution if av_format == 'video' else i.abr for i in download_type])
     numeric_quality = [int(re.split('p|kbps', i, 0)[0])
@@ -47,8 +61,7 @@ def download_type(video, title, av_format, resolution_to_download):
                               int(re.split('p|kbps', resolution_to_download, 0)[0]))).argmin()
     available_quality = list_of_quality[nearest_quality]
     if av_format == 'video':
-        required_file = download_type.filter(
-            res=available_quality).first()
+        required_file = download_type.filter(res=available_quality).first()
     if av_format == 'audio':
         required_file = download_type.filter(
             abr=available_quality).first()
