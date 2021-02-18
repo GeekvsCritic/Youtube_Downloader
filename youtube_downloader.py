@@ -7,8 +7,6 @@ import pytube
 from pytube.cli import on_progress
 import getopt
 import numpy as np
-# os.system(f"{sys.executable} -m pip install -U progressbar")
-# os.system(f"{sys.executable} -m pip install -U pytube")
 
 version = 1.5
 name = 'youtube_downloader.py'
@@ -30,7 +28,8 @@ def download_file(required_file, title, av_format, available_quality):
     file_name = title + "_" + available_quality  # +"."+file_extension
     file_size = required_file.filesize
     print("File Size: "+str(round(file_size/1024/1024, 2))+" MB")
-    file = required_file.download(filename=file_name, output_path="./downloads/")
+    file = required_file.download(
+        filename=file_name, output_path="./downloads/")
     file_without_ext, file_ext = os.path.splitext(file)
     os.rename(file.replace("\\", r"\\"), file_without_ext +
               ".mp3" if av_format == 'audio' and file_ext == '.mp4' else file_without_ext+file_ext)
